@@ -31,6 +31,9 @@ for row in range(10):
 # Initialize pygame
 pygame.init()
 
+# Set font
+font = pygame.font.SysFont("monospace", 10)
+
 # Set screen height and width- 10 rows of cells * 20 pixels each + 2 pixels between each cell = 222 pixels square
 WINDOW_SIZE = [222, 222]
 screen = pygame.display.set_mode(WINDOW_SIZE)
@@ -52,6 +55,13 @@ def draw_x(row, column):
     # (screen, color, closed, [uppermost point, leftmost point, width, height], thickness)
     pygame.draw.line(screen, RED, (upper, left), (lower, right), 2)
     pygame.draw.line(screen, RED, (upper, right), (lower, left), 2)
+
+
+def draw_number(row, column, number):
+    upper = (MARGIN + WIDTH) * column + MARGIN
+    left = (MARGIN + HEIGHT) * row + MARGIN
+    label = font.render(number, 1, BLACK)
+    screen.blit(label, (upper, left))
 
 
 # Returns number of bombs around clicked cell
@@ -106,7 +116,11 @@ def main():
                     pos = pygame.mouse.get_pos()
                     column = pos[0] // (WIDTH + MARGIN)
                     row = pos[1] // (HEIGHT + MARGIN)
-                    grid[row][column] = 9
+                    if grid[row][column] != 1:
+                        if grid[row][column] == 9:
+                            grid[row][column] = 0
+                        else:
+                            grid[row][column] = 9
 
         # Set the screen background
         screen.fill(BLACK)
