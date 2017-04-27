@@ -32,7 +32,7 @@ for row in range(10):
 pygame.init()
 
 # Set font
-font = pygame.font.SysFont("monospace", 10)
+font = pygame.font.SysFont("monospace", 15)
 
 # Set screen height and width- 10 rows of cells * 20 pixels each + 2 pixels between each cell = 222 pixels square
 WINDOW_SIZE = [222, 222]
@@ -45,22 +45,11 @@ pygame.display.set_caption("Minesweeper")
 clock = pygame.time.Clock()
 
 
-# Draws an X to represent a flag placed on a tile
-def draw_x(row, column):
+# Draws the value that was passed to it into the cell at given row/column
+def draw_number(row, column, value):
     upper = (MARGIN + WIDTH) * column + MARGIN
     left = (MARGIN + HEIGHT) * row + MARGIN
-    lower = upper + WIDTH
-    right = left + HEIGHT
-    # Test drawing a red X
-    # (screen, color, closed, [uppermost point, leftmost point, width, height], thickness)
-    pygame.draw.line(screen, RED, (upper, left), (lower, right), 2)
-    pygame.draw.line(screen, RED, (upper, right), (lower, left), 2)
-
-
-def draw_number(row, column, number):
-    upper = (MARGIN + WIDTH) * column + MARGIN
-    left = (MARGIN + HEIGHT) * row + MARGIN
-    label = font.render(number, 1, BLACK)
+    label = font.render(str(value), 1, BLACK)
     screen.blit(label, (upper, left))
 
 
@@ -84,6 +73,9 @@ def check_num_bombs(row, column):
     return counter
 
 
+grid[0][0] = 11
+
+
 # Main loop
 def main():
     # Used to loop until the user clicks the close button
@@ -94,9 +86,12 @@ def main():
             # If the user clicked the close button, use flag to exit loop
             if event.type == pygame.QUIT:
                 done = True
+
             # Mousedown can mean left, middle, or right button: left is 1, middle is 2, right is 3
             # Left button digs, right button places a flag
             elif event.type == pygame.MOUSEBUTTONDOWN:
+
+                # Left click (dig)
                 if event.button == 1:
                     pos = pygame.mouse.get_pos()    # Get mouse position
                     column = pos[0] // (WIDTH + MARGIN)     # Convert x/y screen coordinates to cell coordinates
@@ -106,21 +101,30 @@ def main():
                     # If the tile is a bomb, player loses
                     if grid[row][column] == 11:
                         print("You lose")
+                        done = True
 
-                    # If we get this far, player has NOT clicked a bomb- check for bombs around clicked tile
-                    bombs = check_num_bombs(row, column)
-                    grid[row][column] = 1   # No matter what, color tile white
-                    # TODO draw 1-8 functions
+                    # Only continue if the grid is unclicked or has a number
+                    if grid[row][column] < 1 or grid[row][column] > 8:
 
+                        # If tile is not a bomb, check for bombs around the tile
+                        bombs = check_num_bombs(row, column)
+
+                        if 0 < bombs < 9:
+                            grid[row][column] = bombs   # Cell will have value of number of bombs around it
+                        else:
+                            grid[row][column] = 9   # If there are no bombs, set grid to 9 (zero is unclicked tile)
+
+                # Right click (set/unset flag)
                 elif event.button == 3:
                     pos = pygame.mouse.get_pos()
                     column = pos[0] // (WIDTH + MARGIN)
                     row = pos[1] // (HEIGHT + MARGIN)
-                    if grid[row][column] != 1:
-                        if grid[row][column] == 9:
-                            grid[row][column] = 0
+                    if grid[row][column] == 0 or grid[row][column] >= 10:      # If tile is already clicked & clear, do nothing
+                        if grid[row][column] == 10:
+                            # TODO flagging then unflagging removes bomb!
+                            grid[row][column] = 0   # If tile is already flagged, unflag it
                         else:
-                            grid[row][column] = 9
+                            grid[row][column] = 10   # If tile is unclicked, flag it
 
         # Set the screen background
         screen.fill(BLACK)
@@ -131,7 +135,7 @@ def main():
                 # Unclicked cells are gray (default)
                 color = GRAY
                 # Clicked but empty cells are white
-                if grid[row][column] == 1:
+                if 1 <= grid[row][column] <= 9:
                     color = WHITE
                 # Cells actually created here (screen, color, [uppermost point, leftmost point, width, height])
                 pygame.draw.rect(screen,
@@ -140,9 +144,13 @@ def main():
                                   (MARGIN + HEIGHT) * row + MARGIN,
                                   WIDTH,
                                   HEIGHT])
-                # So whole map isn't drawn over X's
-                if grid[row][column] == 9:
-                    draw_x(row, column)
+
+                # Add numbers & x's over basic cells
+                if 1 <= grid[row][column] <= 8:
+                    draw_number(row, column, grid[row][column])
+
+                elif grid[row][column] == 10:
+                    draw_number(row, column, "x")
 
         # Limit refresh rate to 60 frames per second
         clock.tick(60)
