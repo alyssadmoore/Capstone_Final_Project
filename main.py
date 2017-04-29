@@ -128,8 +128,20 @@ def generate_data(val):
     return revealed_cells
 
 
-# Convert row, column coordinates into x, y pixel coordinates
-def get_top_left_coordinates(x, y):
-    left = x * (CELL_SIDE_LENGTH + CELL_MARGIN) + X_BOARD_MARGIN
-    top = y * (CELL_SIDE_LENGTH + CELL_MARGIN) + Y_BOARD_MARGIN
-    return (left, top)
+# Convert row, column coordinates into x, y pixel coordinates (for drawing shapes)
+def get_top_left_coordinates(row, column):
+    left = row * (CELL_SIDE_LENGTH + CELL_MARGIN) + X_BOARD_MARGIN
+    top = column * (CELL_SIDE_LENGTH + CELL_MARGIN) + Y_BOARD_MARGIN
+    return left, top
+
+
+# Convert x, y pixel coordinates to row, column coordinates (for mouse hovering)
+def get_box_at_pixel(x, y):
+    for cell_x in range(GRID_WIDTH):
+        for cell_y in range(GRID_HEIGHT):
+            left, top = get_top_left_coordinates(cell_x, cell_y)
+            cell_rect = pygame.Rect(left, top, CELL_SIDE_LENGTH, CELL_SIDE_LENGTH)
+            if cell_rect.collidepoint(x, y):    # If currently hovering over a cell
+                return cell_x, cell_y
+    return None, None  # If not currently hovering over a cell
+
