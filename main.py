@@ -17,8 +17,8 @@ FPS = 30    # frames per second (window refresh speed)
 
 # Relatives (so board size can easily be changed)
 NUM_MINES = 1 + int(GRID_WIDTH * GRID_HEIGHT * DIFFICULTY)  # Default about 10% of the board is mines
-WINDOW_HEIGHT = 250     # Side length of window
-WINDOW_WIDTH = 250      # TODO relative window size
+WINDOW_HEIGHT = (CELL_SIDE_LENGTH * GRID_HEIGHT) + (CELL_MARGIN * GRID_HEIGHT) + (Y_BOARD_MARGIN * 2)
+WINDOW_WIDTH = (CELL_SIDE_LENGTH * GRID_WIDTH) + (CELL_MARGIN * GRID_WIDTH) + (X_BOARD_MARGIN * 2)
 
 # R G B
 RED = (255, 0, 0)
