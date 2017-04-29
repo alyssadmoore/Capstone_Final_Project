@@ -3,17 +3,17 @@ import random
 import pygame
 import pygame.locals
 
-# TODO timer?
+# TODO timer
 
 # Absolutes (in pixels where not otherwise stated)
-FPS = 30    # frames per second (window refresh speed)
 CELL_SIDE_LENGTH = 20      # Side length of each cell
 CELL_MARGIN = 2     # Gap between cells
 GRID_HEIGHT = 10   # How many cells are in the grid
 GRID_WIDTH = 10
 X_BOARD_MARGIN = 50   # Gap between grid and sides of board
 Y_BOARD_MARGIN = 50
-DIFFICULTY = 0.1    # Later features, will affect board size and mine ratio
+DIFFICULTY = 0.1    # TODO later features, will affect board size and mine ratio
+FPS = 30    # frames per second (window refresh speed)
 
 # Relatives (so board size can easily be changed)
 NUM_MINES = 1 + int(GRID_WIDTH * GRID_HEIGHT * DIFFICULTY)  # Default about 10% of the board is mines
@@ -117,7 +117,7 @@ def main():
 
             if not revealed_cells[cell_x][cell_y] and right_click and not game_over:
                 flags[cell_x][cell_y] = not flags[cell_x][cell_y]
-                # TODO draw_board(board, revealed_cells, flags)
+                draw_board(board, revealed_cells, flags)
 
             win = True
             for x in range(GRID_WIDTH):
@@ -224,16 +224,45 @@ def get_cell_at_pixel(x, y):
     return None, None  # If not currently hovering over a cell
 
 
-# TODO redraws board each clock tick
-def draw_board(board, cells, flags):
+# (re)draws board each clock tick
+def draw_board(board, revealed, flags):
+    for cell_x in range(GRID_WIDTH):
+        for cell_y in range(GRID_HEIGHT):
+            left, top = get_top_left_coordinates(cell_x, cell_y)
+
+            if not revealed[cell_x][cell_y]:
+                # Draw a gray box over revealed cell, so value isn't affected but user can't see the value
+                pygame.draw.rect(DISPLAY_SURF, CELL_COLOR, (left, top, CELL_SIDE_LENGTH, CELL_SIDE_LENGTH))
+                if flags[cell_x][cell_y]:
+                    # TODO flag symbol here
+                    pass
+
+            else:   # Revealed icons sometimes have number on them, draw those if necessary
+                shape, color = get_shape_and_color(board, cell_x, cell_y)
+                draw_icon(shape, color, cell_x, cell_y)
+
+
+# TODO will be in charge of drawing the icon name passed to it
+def draw_icon(shape, color, cell_x, cell_y):
     pass
 
 
-# TODO will draw a box around the cell the mouse is hovering over, 'highlighting' it
-def highlight_cell(x, y):
+# TODO
+def get_shape_and_color(board, cell_x, cell_y):
     pass
+
+
+# Draws a box around the cell the mouse is hovering over, 'highlighting' it
+def highlight_cell(cell_x, cell_y):
+    left, top = get_top_left_coordinates(cell_x, cell_y)
+    # Changes with cell size, but line width is hard-set at 2px (last argument)
+    pygame.draw.rect(DISPLAY_SURF, HIGHLIGHT_COLOR, (left - (CELL_MARGIN / 2), top - (CELL_MARGIN / 2),
+                                                     CELL_SIDE_LENGTH + CELL_MARGIN, CELL_SIDE_LENGTH + CELL_MARGIN), 2)
 
 
 # TODO will reveal clear cells next to clear cell the user clicks (and clear cells next to those clear cells, etc.)
 def reveal_cells(x, y, board, cells, flags):
     pass
+
+
+main()
