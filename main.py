@@ -6,9 +6,9 @@ import pygame.locals
 # TODO timer
 
 # Absolutes (in pixels where not otherwise stated)
-CELL_SIDE_LENGTH = 20      # Side length of each cell
+CELL_SIDE_LENGTH = 30      # Side length of each cell
 CELL_MARGIN = 2     # Gap between cells
-GRID_HEIGHT = 10   # How many cells are in the grid
+GRID_HEIGHT = 10    # How many cells are in the grid
 GRID_WIDTH = 10
 X_BOARD_MARGIN = 50   # Gap between grid and sides of board
 Y_BOARD_MARGIN = 50
@@ -247,9 +247,9 @@ def draw_icon(shape, color, cell_x, cell_y):
     pass
 
 
-# TODO
 def get_shape_and_color(board, cell_x, cell_y):
-    pass
+    # shape value for cell x, y is stored in board[x][y][0], color value in board[x][y][1]
+    return board[cell_x][cell_y][0], board[cell_x][cell_y][1]
 
 
 # Draws a box around the cell the mouse is hovering over, 'highlighting' it
