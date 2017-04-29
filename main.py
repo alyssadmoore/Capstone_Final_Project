@@ -6,12 +6,12 @@ import pygame.locals
 # TODO timer
 
 # Absolutes (in pixels where not otherwise stated)
-CELL_SIDE_LENGTH = 50      # Side length of each cell- ADJUST THIS TO MAKE ENTIRE SCREEN LARGER OR SMALLER
+CELL_SIDE_LENGTH = 30      # Side length of each cell- ADJUST THIS TO MAKE ENTIRE SCREEN LARGER OR SMALLER
 CELL_MARGIN = 2     # Gap between cells
 GRID_HEIGHT = 10    # How many cells are in the grid
 GRID_WIDTH = 10
 X_BOARD_MARGIN = 50   # Gap between grid and sides of board
-Y_BOARD_MARGIN = 50
+Y_BOARD_MARGIN = 75
 DIFFICULTY = 0.1    # TODO later features, will affect board size and mine ratio
 FPS = 30    # frames per second (window refresh speed)
 
@@ -294,9 +294,35 @@ def highlight_cell(cell_x, cell_y):
                                                      CELL_SIDE_LENGTH + CELL_MARGIN, CELL_SIDE_LENGTH + CELL_MARGIN), 2)
 
 
-# TODO will reveal clear cells next to clear cell the user clicked (and clear cells next to those clear cells, etc.)
-def reveal_cells(x, y, board, cells, flags):
-    pass
+# Reveals clear cells next to clear cell the user clicked (and clear cells next to those cells, etc.)
+def reveal_cells(x, y, board, revealed, flags):
+    if revealed[x][y]:  # If the cell is already revealed, do nothing
+        return
+    if flags[x][y]:     # If the cell already has a flag on it, do nothing
+        return
+    revealed[x][y] = True
+    if board[x][y][0] != CLEAR:
+        return
+    if x > 0:
+        if y > 0:
+            reveal_cells(x - 1, y - 1, board, revealed, flags)
+        reveal_cells(x - 1, y, board, revealed, flags)
+        if y < GRID_HEIGHT - 1:
+            reveal_cells(x - 1, y + 1, board, revealed, flags)
+
+    if x < GRID_WIDTH - 1:
+        if y > 0:
+            reveal_cells(x + 1, y - 1, board, revealed, flags)
+        reveal_cells(x + 1, y, board, revealed, flags)
+        if y < GRID_HEIGHT - 1:
+            reveal_cells(x + 1, y + 1, board, revealed, flags)
+
+    if y > 0:
+        reveal_cells(x, y - 1, board, revealed, flags)
+
+    if y < GRID_HEIGHT - 1:
+        reveal_cells(x, y + 1, board, revealed, flags)
 
 
-main()
+if __name__ == '__main__':
+    main()
