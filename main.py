@@ -6,7 +6,7 @@ import pygame.locals
 # TODO timer
 
 # Absolutes (in pixels where not otherwise stated)
-CELL_SIDE_LENGTH = 30      # Side length of each cell
+CELL_SIDE_LENGTH = 50      # Side length of each cell- ADJUST THIS TO MAKE ENTIRE SCREEN LARGER OR SMALLER
 CELL_MARGIN = 2     # Gap between cells
 GRID_HEIGHT = 10    # How many cells are in the grid
 GRID_WIDTH = 10
@@ -20,20 +20,23 @@ NUM_MINES = 1 + int(GRID_WIDTH * GRID_HEIGHT * DIFFICULTY)  # Default about 10% 
 WINDOW_HEIGHT = (CELL_SIDE_LENGTH * GRID_HEIGHT) + (CELL_MARGIN * GRID_HEIGHT) + (Y_BOARD_MARGIN * 2)
 WINDOW_WIDTH = (CELL_SIDE_LENGTH * GRID_WIDTH) + (CELL_MARGIN * GRID_WIDTH) + (X_BOARD_MARGIN * 2)
 
-# R G B
+# R G B (not all used, but kept so theme can easily be changed)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
 GREEN = (0, 255, 0)
+MIDGREEN = (40, 215, 40)
 CYAN = (0, 255, 255)
 BLUE = (0, 0, 255)
-PURPLE = (255, 0, 255)
+DARKBLUE = (20, 20, 60)
+MAGENTA = (255, 0, 255)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GRAY = (200, 200, 200)
 
-BG_COLOR = BLACK    # Background color
-CELL_COLOR = GRAY
-HIGHLIGHT_COLOR = BLUE  # Cell the cursor is currently hovering over
+BG_COLOR = DARKBLUE     # Background color
+CELL_COLOR = GRAY       # Universal cover color
+HIGHLIGHT_COLOR = CYAN  # Cell the cursor is currently hovering over
+FLAG_COLOR = MIDGREEN
 
 # Symbols
 FLAG = 'flag'
@@ -43,9 +46,9 @@ CLEAR = 'clear'
 
 def main():
     pygame.init()
-    global FPS_CLOCK, DISPLAY_SURF
-    FPS_CLOCK = pygame.time.Clock()
-    DISPLAY_SURF = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    global CLOCK, SURFACE
+    CLOCK = pygame.time.Clock()
+    SURFACE = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 
     mouse_x = 0  # Stores x-coordinate of mouse event
     mouse_y = 0  # Stores y-coordinate of mouse event
@@ -56,17 +59,17 @@ def main():
     flags = generate_data(False)
     game_over = False
 
-    DISPLAY_SURF.fill(BG_COLOR)
+    SURFACE.fill(BG_COLOR)
 
     # Main loop
     while True:
         left_click = False
         right_click = False
 
-        DISPLAY_SURF.fill(BG_COLOR)
+        SURFACE.fill(BG_COLOR)
         draw_board(board, revealed_cells, flags)
 
-        font = pygame.font.SysFont("monospace", 15)
+        font = pygame.font.SysFont("times new roman", 15)
 
         # Mouse event handling
         for event in pygame.event.get():
@@ -95,30 +98,35 @@ def main():
             pass
 
         cell_x, cell_y = get_cell_at_pixel(mouse_x, mouse_y)
-        if cell_x is not None and cell_y is not None:   # If mouse is currently hovering over a cell
+        if cell_x is not None and cell_y is not None:   # If mouse is hovering over a cell during mouse event
+
+            # Highlight cell
             if not revealed_cells[cell_x][cell_y] and not game_over:
                 highlight_cell(cell_x, cell_y)
 
+            # Digging somewhere
             if not revealed_cells[cell_x][cell_y] and left_click and not game_over:
 
                 flags[cell_x][cell_y] = False
 
-                if board[cell_x][cell_y][0] == MINE:
+                if board[cell_x][cell_y][0] == MINE:    # If you dig a mine, reveal all cells & game over
                     revealed_cells = generate_data(True)
                     game_over = True
 
-                elif board[cell_x][cell_y][0] == CLEAR:
+                elif board[cell_x][cell_y][0] == CLEAR:     # If you dig a clear cell, reveal that cell
                     reveal_cells(cell_x, cell_y, board, revealed_cells, flags)
 
                 else:
-                    revealed_cells[cell_x][cell_y] = True  # set the cell as revealed
+                    revealed_cells[cell_x][cell_y] = True  # Set the cell as revealed
 
-                draw_board(board, revealed_cells, flags)
+                draw_board(board, revealed_cells, flags)    # Redraw board after mouse event
 
+            # Placing a flag
             if not revealed_cells[cell_x][cell_y] and right_click and not game_over:
                 flags[cell_x][cell_y] = not flags[cell_x][cell_y]
-                draw_board(board, revealed_cells, flags)
+                draw_board(board, revealed_cells, flags)    # Flag is drawn in this method call
 
+            # This block decides whether or not the player has won yet after a mouse event
             win = True
             for x in range(GRID_WIDTH):
                 for y in range(GRID_HEIGHT):
@@ -131,7 +139,7 @@ def main():
 
         # Redraw the screen and wait for clock tick
         pygame.display.update()
-        FPS_CLOCK.tick(FPS)
+        CLOCK.tick(FPS)
 
 
 def get_board():
@@ -143,7 +151,7 @@ def get_board():
     for x in range(GRID_WIDTH):
         for y in range(GRID_HEIGHT):
             if mines < NUM_MINES:
-                icons.append((MINE, GREEN))
+                icons.append((MINE, RED))
                 mines += 1
             else:
                 icons.append((CLEAR, WHITE))
@@ -158,12 +166,13 @@ def get_board():
             del icons[0]  # so the next icon[0] is the one after this
         board.append(column)
 
+    # This block determines how many mines are around each cell, and adds the number to the board's array
     for x in range(GRID_WIDTH):
         for y in range(GRID_HEIGHT):
             mines = 0
 
             if x > 0:
-                if y > 0:
+                if y > 0:   # If not on the left edge AND not on top edge
                     if board[x - 1][y - 1][0] == MINE:
                         mines += 1
                 if board[x - 1][y][0] == MINE:
@@ -173,7 +182,7 @@ def get_board():
                         mines += 1
 
             if x < GRID_WIDTH - 1:
-                if y > 0:
+                if y > 0:   # If not on right edge AND not on top edge
                     if board[x + 1][y - 1][0] == MINE:
                         mines += 1
                 if board[x + 1][y][0] == MINE:
@@ -182,15 +191,15 @@ def get_board():
                     if board[x + 1][y + 1][0] == MINE:
                         mines += 1
 
-            if y > 0:
+            if y > 0:   # If not on right or left edge AND not on top edge
                 if board[x][y - 1][0] == MINE:
                     mines += 1
 
-            if y < GRID_HEIGHT - 1:
+            if y < GRID_HEIGHT - 1:     # If not on riht or left edge AND on bottom edge
                 if board[x][y + 1][0] == MINE:
                     mines += 1
 
-            # set number of mines
+            # If the cell is clear and there are mines around it, add the number of mines to board array
             if board[x][y][0] != MINE:
                 if mines in range(1, 9):
                     board[x][y] = (str(mines), WHITE)
@@ -224,29 +233,54 @@ def get_cell_at_pixel(x, y):
     return None, None  # If not currently hovering over a cell
 
 
-# (re)draws board each clock tick
+# Redraws board after mouse event
 def draw_board(board, revealed, flags):
     for cell_x in range(GRID_WIDTH):
         for cell_y in range(GRID_HEIGHT):
             left, top = get_top_left_coordinates(cell_x, cell_y)
 
             if not revealed[cell_x][cell_y]:
-                # Draw a gray box over revealed cell, so value isn't affected but user can't see the value
-                pygame.draw.rect(DISPLAY_SURF, CELL_COLOR, (left, top, CELL_SIDE_LENGTH, CELL_SIDE_LENGTH))
-                if flags[cell_x][cell_y]:
-                    # TODO flag symbol here
-                    pass
+                # Draw a gray box over unrevealed cell, so value isn't affected but user can't see the value
+                pygame.draw.rect(SURFACE, CELL_COLOR, (left, top, CELL_SIDE_LENGTH, CELL_SIDE_LENGTH))
 
-            else:   # Revealed icons sometimes have number on them, draw those if necessary
+                if flags[cell_x][cell_y]:   # Flag must be drawn here, activated after mouse event
+                    half = int(CELL_SIDE_LENGTH * 0.5)   # Relative point halfway through cell
+                    # top point, bottom left point, bottom right point
+                    pygame.draw.polygon(SURFACE, FLAG_COLOR, [(half + left, top),
+                                                              (left, top + CELL_SIDE_LENGTH - CELL_MARGIN/2),
+                                                              (left + CELL_SIDE_LENGTH - CELL_MARGIN/2, top + CELL_SIDE_LENGTH - CELL_MARGIN/2)])
+
+            else:   # Draw revealed cells
                 shape, color = get_shape_and_color(board, cell_x, cell_y)
                 draw_icon(shape, color, cell_x, cell_y)
 
 
-# TODO will be in charge of drawing the icon name passed to it
+# Draws icon passed to it in the stated cell
 def draw_icon(shape, color, cell_x, cell_y):
-    pass
+
+    # Relative point of quarter-way through cell
+    quarter = int(CELL_SIDE_LENGTH * 0.25)
+
+    left, top = get_top_left_coordinates(cell_x, cell_y)    # Drawing of all images starts at top left corner
+
+    # Draw the shapes
+    if shape == CLEAR:
+        pygame.draw.rect(SURFACE, color, (left, top, CELL_SIDE_LENGTH, CELL_SIDE_LENGTH))
+
+    elif shape == MINE:
+        pygame.draw.ellipse(SURFACE, color, (left, top, CELL_SIDE_LENGTH, CELL_SIDE_LENGTH))
+
+    # Flag shape in draw_board because it is activated via mouse event
+
+    else:   # Clear with num
+        pygame.draw.rect(SURFACE, color, (left, top, CELL_SIDE_LENGTH, CELL_SIDE_LENGTH))
+        fontsize = int(CELL_SIDE_LENGTH)
+        font = pygame.font.SysFont("times new roman", fontsize)
+        label = font.render(shape, 1, BLACK)  # a cell with number corresponds to shapes "1", "2", etc.
+        SURFACE.blit(label, (left + quarter, top))
 
 
+# Returns the shape and color of icon to be created in draw_icon method
 def get_shape_and_color(board, cell_x, cell_y):
     # shape value for cell x, y is stored in board[x][y][0], color value in board[x][y][1]
     return board[cell_x][cell_y][0], board[cell_x][cell_y][1]
@@ -256,11 +290,11 @@ def get_shape_and_color(board, cell_x, cell_y):
 def highlight_cell(cell_x, cell_y):
     left, top = get_top_left_coordinates(cell_x, cell_y)
     # Changes with cell size, but line width is hard-set at 2px (last argument)
-    pygame.draw.rect(DISPLAY_SURF, HIGHLIGHT_COLOR, (left - (CELL_MARGIN / 2), top - (CELL_MARGIN / 2),
+    pygame.draw.rect(SURFACE, HIGHLIGHT_COLOR, (left - (CELL_MARGIN / 2), top - (CELL_MARGIN / 2),
                                                      CELL_SIDE_LENGTH + CELL_MARGIN, CELL_SIDE_LENGTH + CELL_MARGIN), 2)
 
 
-# TODO will reveal clear cells next to clear cell the user clicks (and clear cells next to those clear cells, etc.)
+# TODO will reveal clear cells next to clear cell the user clicked (and clear cells next to those clear cells, etc.)
 def reveal_cells(x, y, board, cells, flags):
     pass
 
