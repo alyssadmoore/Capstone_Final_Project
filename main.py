@@ -95,7 +95,19 @@ def main():
 
         # TODO game over screen, instructions to restart
         if game_over:
-            pass
+            a_x = X_BOARD_MARGIN + ((GRID_WIDTH / 4) * CELL_SIDE_LENGTH)
+            b_y = Y_BOARD_MARGIN + (Y_BOARD_MARGIN / 4) + (GRID_HEIGHT * CELL_SIDE_LENGTH) + (GRID_HEIGHT * CELL_MARGIN)
+            press_button_x = None
+            press_button_y = None
+            font = pygame.font.SysFont("times new roman", 25)
+            if win:
+                label = font.render('Congratulations, you won!', 1, (0, 255, 0))
+                SURFACE.blit(label, (a_x, b_y))
+            else:
+                label = font.render('GAME OVER', 1, (255, 0, 0))
+                SURFACE.blit(label, (a_x, b_y))
+            # label = font.render('Press RIGHT mouse button', 1, YELLOW)
+            # SURFACE.blit(label, (a_x, b_y))
 
         cell_x, cell_y = get_cell_at_pixel(mouse_x, mouse_y)
         if cell_x is not None and cell_y is not None:   # If mouse is hovering over a cell during mouse event
