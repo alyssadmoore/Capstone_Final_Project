@@ -3,7 +3,8 @@ import random
 import pygame
 import pygame.locals
 
-# TODO timer
+# TODO timer, high scores, difficulties
+# TODO question mark after flag?
 
 # Absolutes (in pixels where not otherwise stated)
 CELL_SIDE_LENGTH = 30      # Side length of each cell- ADJUST THIS TO MAKE ENTIRE SCREEN LARGER OR SMALLER
@@ -69,7 +70,12 @@ def main():
         SURFACE.fill(BG_COLOR)
         draw_board(board, revealed_cells, flags)
 
-        font = pygame.font.SysFont("times new roman", 15)
+        font = pygame.font.SysFont("times new roman", 25)
+
+        # Timer (will be used to implement high scores)
+        time = pygame.time.get_ticks() / 1000
+        label = font.render(str(int(time)), 1, MAGENTA)
+        SURFACE.blit(label, (50, 50))
 
         # Mouse event handling
         for event in pygame.event.get():
@@ -93,18 +99,21 @@ def main():
             game_over = False
             right_click = False
 
-        # TODO game over screen, instructions to restart
+        # TODO tweak spacing on text
         if game_over:
             a_x = X_BOARD_MARGIN + ((GRID_WIDTH / 4) * CELL_SIDE_LENGTH)
             b_y = Y_BOARD_MARGIN + (Y_BOARD_MARGIN / 4) + (GRID_HEIGHT * CELL_SIDE_LENGTH) + (GRID_HEIGHT * CELL_MARGIN)
             press_button_x = None
             press_button_y = None
             font = pygame.font.SysFont("times new roman", 25)
+            score = time
             if win:
-                label = font.render('Congratulations, you won!', 1, (0, 255, 0))
+                label = font.render('Congratulations, you won!', 1, GREEN)
                 SURFACE.blit(label, (a_x, b_y))
+                label = font.render('Score: ' + str(time), 1, YELLOW)
+                SURFACE.blit(label, a_x, b_y + 20)
             else:
-                label = font.render('GAME OVER', 1, (255, 0, 0))
+                label = font.render('GAME OVER', 1, RED)
                 SURFACE.blit(label, (a_x, b_y))
             # label = font.render('Press RIGHT mouse button', 1, YELLOW)
             # SURFACE.blit(label, (a_x, b_y))
@@ -336,5 +345,4 @@ def reveal_cells(x, y, board, revealed, flags):
         reveal_cells(x, y + 1, board, revealed, flags)
 
 
-if __name__ == '__main__':
-    main()
+main()
