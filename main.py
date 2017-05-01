@@ -81,7 +81,7 @@ class Game:
 
             # Mouse event handling
             for event in pygame.event.get():
-                if event.type == pygame.locals.QUIT or (event.type == pygame.locals.KEYUP and event.key == pygame.locals.K_ESCAPE):
+                if event.type == pygame.locals.QUIT:
                     pygame.quit()
                     sys.exit()  # Even if the window closes, we still need to manually stop the processes
                 elif event.type == pygame.locals.MOUSEMOTION:
@@ -106,7 +106,6 @@ class Game:
                 a_x = X_BOARD_MARGIN + ((GRID_WIDTH / 4) * CELL_SIDE_LENGTH)
                 b_y = Y_BOARD_MARGIN + (Y_BOARD_MARGIN / 4) + (GRID_HEIGHT * CELL_SIDE_LENGTH) + (GRID_HEIGHT * CELL_MARGIN)
                 font = pygame.font.SysFont("times new roman", 25)
-                score = time
                 if win:
                     label = font.render('Congratulations, you won!', 1, GREEN)
                     SURFACE.blit(label, (a_x, b_y))
@@ -149,11 +148,11 @@ class Game:
 
                 # This block decides whether or not the player has won yet after a mouse event
                 win = True
-                for x in range(GRID_WIDTH):
-                    for y in range(GRID_HEIGHT):
-                        if (self.board[x][y][0] == MINE and not self.flags[x][y]) or (    # If a cell is a mine and not flagged, or
-                                        self.board[x][y][0] != MINE and not self.revealed_cells[x][y]):  # if a cell is clear but not revealed
-                            win = False                                                # then the game is not yet complete
+                for x in range(GRID_WIDTH):         # If a cell is a mine and not flagged, or if a cell is clear
+                    for y in range(GRID_HEIGHT):    # but not revealed, then the game is not yet over
+                        if (self.board[x][y][0] == MINE and not self.flags[x][y]) or (
+                                        self.board[x][y][0] != MINE and not self.revealed_cells[x][y]):
+                            win = False
 
                 if win:
                     self.game_over = True
@@ -162,7 +161,8 @@ class Game:
             pygame.display.update()
             CLOCK.tick(FPS)
 
-    def get_board(self):
+    @staticmethod
+    def get_board():
         icons = []
         mines = 0
 
@@ -227,18 +227,19 @@ class Game:
         return board
 
     # Returns a list of lists showing which cells are clear
-    def generate_data(self, val):
+    @staticmethod
+    def generate_data(val):
         clear = []
         for i in range(GRID_WIDTH):
             clear.append([val] * GRID_HEIGHT)
         return clear
 
     # Convert row, column coordinates into x, y pixel coordinates (for drawing shapes)
-    def get_top_left_coordinates(self, row, column):
+    @staticmethod
+    def get_top_left_coordinates(row, column):
         left = row * (CELL_SIDE_LENGTH + CELL_MARGIN) + X_BOARD_MARGIN
         top = column * (CELL_SIDE_LENGTH + CELL_MARGIN) + Y_BOARD_MARGIN
         return left, top
-
 
     # Convert x, y pixel coordinates to row, column coordinates (for mouse hovering)
     def get_cell_at_pixel(self, x, y):
@@ -249,7 +250,6 @@ class Game:
                 if cell_rect.collidepoint(x, y):    # If currently hovering over a cell
                     return cell_x, cell_y
         return None, None  # If not currently hovering over a cell
-
 
     # Redraws board after mouse event
     def draw_board(self, board, revealed, flags):
@@ -266,12 +266,12 @@ class Game:
                         # top point, bottom left point, bottom right point
                         pygame.draw.polygon(SURFACE, FLAG_COLOR, [(half + left, top),
                                                                   (left, top + CELL_SIDE_LENGTH - CELL_MARGIN/2),
-                                                                  (left + CELL_SIDE_LENGTH - CELL_MARGIN/2, top + CELL_SIDE_LENGTH - CELL_MARGIN/2)])
+                                                                  (left + CELL_SIDE_LENGTH - CELL_MARGIN/2, top +
+                                                                   CELL_SIDE_LENGTH - CELL_MARGIN/2)])
 
                 else:   # Draw revealed cells
                     shape, color = self.get_shape_and_color(board, cell_x, cell_y)
                     self.draw_icon(shape, color, cell_x, cell_y)
-
 
     # Draws icon passed to it in the stated cell
     def draw_icon(self, shape, color, cell_x, cell_y):
@@ -297,20 +297,18 @@ class Game:
             label = font.render(shape, 1, BLACK)  # a cell with number corresponds to shapes "1", "2", etc.
             SURFACE.blit(label, (left + quarter, top))
 
-
     # Returns the shape and color of icon to be created in draw_icon method
-    def get_shape_and_color(self, board, cell_x, cell_y):
+    @staticmethod
+    def get_shape_and_color(board, cell_x, cell_y):
         # shape value for cell x, y is stored in board[x][y][0], color value in board[x][y][1]
         return board[cell_x][cell_y][0], board[cell_x][cell_y][1]
-
 
     # Draws a box around the cell the mouse is hovering over, 'highlighting' it
     def highlight_cell(self, cell_x, cell_y):
         left, top = self.get_top_left_coordinates(cell_x, cell_y)
         # Changes with cell size, but line width is hard-set at 2px (last argument)
         pygame.draw.rect(SURFACE, HIGHLIGHT_COLOR, (left - (CELL_MARGIN / 2), top - (CELL_MARGIN / 2),
-                                                         CELL_SIDE_LENGTH + CELL_MARGIN, CELL_SIDE_LENGTH + CELL_MARGIN), 2)
-
+                                                    CELL_SIDE_LENGTH + CELL_MARGIN, CELL_SIDE_LENGTH + CELL_MARGIN), 2)
 
     # Reveals clear cells next to clear cell the user clicked (and clear cells next to those cells, etc.)
     def reveal_cells(self, x, y, board, revealed, flags):
@@ -343,5 +341,4 @@ class Game:
 
 
 g = Game()
-g.__init__()
 g.main()
