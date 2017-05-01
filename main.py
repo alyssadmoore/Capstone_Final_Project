@@ -46,30 +46,31 @@ CLEAR = 'clear'
 
 
 class Game:
-    def main(self):
+    def __init__(self):
         pygame.init()
         global CLOCK, SURFACE
         CLOCK = pygame.time.Clock()
         SURFACE = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 
-        mouse_x = 0  # Stores x-coordinate of mouse event
-        mouse_y = 0  # Stores y-coordinate of mouse event
+        self.mouse_x = 0  # Stores x-coordinate of mouse event
+        self.mouse_y = 0  # Stores y-coordinate of mouse event
         pygame.display.set_caption('Minesweeper by Alyssa Moore 2017')
 
-        board = self.get_board()
-        revealed_cells = self.generate_data(False)
-        flags = self.generate_data(False)
-        game_over = False
+        self.board = self.get_board()
+        self.revealed_cells = self.generate_data(False)
+        self.flags = self.generate_data(False)
+        self.game_over = False
 
         SURFACE.fill(BG_COLOR)
 
-        # Main loop
+    def main(self):
+
         while True:
             left_click = False
             right_click = False
 
             SURFACE.fill(BG_COLOR)
-            self.draw_board(board, revealed_cells, flags)
+            self.draw_board(self.board, self.revealed_cells, self.flags)
 
             font = pygame.font.SysFont("times new roman", 25)
 
@@ -84,85 +85,82 @@ class Game:
                     pygame.quit()
                     sys.exit()  # Even if the window closes, we still need to manually stop the processes
                 elif event.type == pygame.locals.MOUSEMOTION:
-                    mouse_x, mouse_y = event.pos  # For hovering info
+                    self.mouse_x, self.mouse_y = event.pos  # For hovering info
                 elif event.type == pygame.locals.MOUSEBUTTONDOWN and event.button == 1:  # Left click
-                    mouse_x, mouse_y = event.pos
+                    self.mouse_x, self.mouse_y = event.pos
                     left_click = True
                 elif event.type == pygame.locals.MOUSEBUTTONDOWN and event.button == 3:  # Right click
-                    mouse_x, mouse_y = event.pos
+                    self.mouse_x, self.mouse_y = event.pos
                     right_click = True
 
             # If user decided to start over, reinitialize board
-            if game_over and right_click:
-                board = self.get_board()
-                revealed_cells = self.generate_data(False)
-                flags = self.generate_data(False)
-                game_over = False
+            if self.game_over and right_click:
+                self.board = self.get_board()
+                self.revealed_cells = self.generate_data(False)
+                self.flags = self.generate_data(False)
+                self.game_over = False
                 right_click = False
 
             # TODO tweak spacing on text
-            if game_over:
+            if self.game_over:
                 a_x = X_BOARD_MARGIN + ((GRID_WIDTH / 4) * CELL_SIDE_LENGTH)
                 b_y = Y_BOARD_MARGIN + (Y_BOARD_MARGIN / 4) + (GRID_HEIGHT * CELL_SIDE_LENGTH) + (GRID_HEIGHT * CELL_MARGIN)
-                press_button_x = None
-                press_button_y = None
                 font = pygame.font.SysFont("times new roman", 25)
                 score = time
                 if win:
                     label = font.render('Congratulations, you won!', 1, GREEN)
                     SURFACE.blit(label, (a_x, b_y))
                     label = font.render('Score: ' + str(time), 1, YELLOW)
-                    SURFACE.blit(label, a_x, b_y + 20)
+                    SURFACE.blit(label, a_x, b_y)
                 else:
                     label = font.render('GAME OVER', 1, RED)
                     SURFACE.blit(label, (a_x, b_y))
-                # label = font.render('Press RIGHT mouse button', 1, YELLOW)
-                # SURFACE.blit(label, (a_x, b_y))
+                label = font.render('Press RIGHT mouse button', 1, YELLOW)
+                SURFACE.blit(label, (a_x - 50, b_y + 25))
 
-            cell_x, cell_y = self.get_cell_at_pixel(mouse_x, mouse_y)
+            cell_x, cell_y = self.get_cell_at_pixel(self.mouse_x, self.mouse_y)
             if cell_x is not None and cell_y is not None:   # If mouse is hovering over a cell during mouse event
 
                 # Highlight cell
-                if not revealed_cells[cell_x][cell_y] and not game_over:
+                if not self.revealed_cells[cell_x][cell_y] and not self.game_over:
                     self.highlight_cell(cell_x, cell_y)
 
                 # Digging somewhere
-                if not revealed_cells[cell_x][cell_y] and left_click and not game_over:
+                if not self.revealed_cells[cell_x][cell_y] and left_click and not self.game_over:
 
-                    flags[cell_x][cell_y] = False
+                    self.flags[cell_x][cell_y] = False
 
-                    if board[cell_x][cell_y][0] == MINE:    # If you dig a mine, reveal all cells & game over
-                        revealed_cells = self.generate_data(True)
-                        game_over = True
+                    if self.board[cell_x][cell_y][0] == MINE:    # If you dig a mine, reveal all cells & game over
+                        self.revealed_cells = self.generate_data(True)
+                        self.game_over = True
 
-                    elif board[cell_x][cell_y][0] == CLEAR:     # If you dig a clear cell, reveal that cell
-                        self.reveal_cells(cell_x, cell_y, board, revealed_cells, flags)
+                    elif self.board[cell_x][cell_y][0] == CLEAR:     # If you dig a clear cell, reveal that cell
+                        self.reveal_cells(cell_x, cell_y, self.board, self.revealed_cells, self.flags)
 
                     else:
-                        revealed_cells[cell_x][cell_y] = True  # Set the cell as revealed
+                        self.revealed_cells[cell_x][cell_y] = True  # Set the cell as revealed
 
-                    self.draw_board(board, revealed_cells, flags)    # Redraw board after mouse event
+                    self.draw_board(self.board, self.revealed_cells, self.flags)    # Redraw board after mouse event
 
                 # Placing a flag
-                if not revealed_cells[cell_x][cell_y] and right_click and not game_over:
-                    flags[cell_x][cell_y] = not flags[cell_x][cell_y]
-                    self.draw_board(board, revealed_cells, flags)    # Flag is drawn in this method call
+                if not self.revealed_cells[cell_x][cell_y] and right_click and not self.game_over:
+                    self.flags[cell_x][cell_y] = not self.flags[cell_x][cell_y]
+                    self.draw_board(self.board, self.revealed_cells, self.flags)    # Flag is drawn in this method call
 
                 # This block decides whether or not the player has won yet after a mouse event
                 win = True
                 for x in range(GRID_WIDTH):
                     for y in range(GRID_HEIGHT):
-                        if (board[x][y][0] == MINE and not flags[x][y]) or (    # If a cell is a mine and not flagged, or
-                                board[x][y][0] != MINE and not revealed_cells[x][y]):  # if a cell is clear but not revealed
+                        if (self.board[x][y][0] == MINE and not self.flags[x][y]) or (    # If a cell is a mine and not flagged, or
+                                        self.board[x][y][0] != MINE and not self.revealed_cells[x][y]):  # if a cell is clear but not revealed
                             win = False                                                # then the game is not yet complete
 
                 if win:
-                    game_over = True
+                    self.game_over = True
 
             # Redraw the screen and wait for clock tick
             pygame.display.update()
             CLOCK.tick(FPS)
-
 
     def get_board(self):
         icons = []
@@ -345,4 +343,5 @@ class Game:
 
 
 g = Game()
+g.__init__()
 g.main()
