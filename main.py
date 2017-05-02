@@ -134,7 +134,8 @@ class Game:
                 # Digging somewhere
                 if not self.revealed_cells[cell_x][cell_y] and left_click and not self.game_over:
 
-                    if not self.flags[cell_x][cell_y]:  # So you can't accidentally click a flagged space
+                    # So you can't accidentally click a flagged/question mark space
+                    if not self.flags[cell_x][cell_y] and not self.questionmarks[cell_x][cell_y]:
 
                         self.flags[cell_x][cell_y] = False
 
