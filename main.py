@@ -42,6 +42,8 @@ FLAG_COLOR = MIDGREEN
 
 # Symbols
 FLAG = 'flag'
+UNFLAGGED = 'unflagged'
+QUESTIONMARK = 'questionmark'
 MINE = 'mine'
 CLEAR = 'clear'
 
@@ -60,6 +62,7 @@ class Game:
         self.board = self.get_board()
         self.revealed_cells = self.generate_data(False)
         self.flags = self.generate_data(False)
+        self.questionmarks = self.generate_data(False)
         self.game_over = False
         self.timer = Stopwatch()
 
@@ -72,7 +75,7 @@ class Game:
             right_click = False
 
             SURFACE.fill(BG_COLOR)
-            self.draw_board(self.board, self.revealed_cells, self.flags)
+            self.draw_board(self.board, self.revealed_cells, self.flags, self.questionmarks)
 
             font = pygame.font.SysFont("times new roman", 25)
 
@@ -101,6 +104,7 @@ class Game:
                 self.board = self.get_board()
                 self.revealed_cells = self.generate_data(False)
                 self.flags = self.generate_data(False)
+                self.questionmarks = self.generate_data(False)
                 self.game_over = False
                 self.timer = Stopwatch()
                 right_click = False
@@ -132,24 +136,36 @@ class Game:
                 # Digging somewhere
                 if not self.revealed_cells[cell_x][cell_y] and left_click and not self.game_over:
 
-                    self.flags[cell_x][cell_y] = False
+                    if not self.flags[cell_x][cell_y]:  # So you can't accidentally click a flagged space
 
-                    if self.board[cell_x][cell_y][0] == MINE:    # If you dig a mine, reveal all cells & game over
-                        self.revealed_cells = self.generate_data(True)
-                        self.game_over = True
+                        self.flags[cell_x][cell_y] = False
 
-                    elif self.board[cell_x][cell_y][0] == CLEAR:     # If you dig a clear cell, reveal that cell
-                        self.reveal_cells(cell_x, cell_y, self.board, self.revealed_cells, self.flags)
+                        if self.board[cell_x][cell_y][0] == MINE:    # If you dig a mine, reveal all cells & game over
+                            self.revealed_cells = self.generate_data(True)
+                            self.game_over = True
 
-                    else:
-                        self.revealed_cells[cell_x][cell_y] = True  # Set the cell as revealed
+                        elif self.board[cell_x][cell_y][0] == CLEAR:     # If you dig a clear cell, reveal that cell
+                            self.reveal_cells(cell_x, cell_y, self.board, self.revealed_cells, self.flags, self.questionmarks)
 
-                    self.draw_board(self.board, self.revealed_cells, self.flags)    # Redraw board after mouse event
+                        else:
+                            self.revealed_cells[cell_x][cell_y] = True  # Set the cell as revealed
 
-                # Placing a flag
+                        self.draw_board(self.board, self.revealed_cells, self.flags, self.questionmarks)    # Redraw board after mouse event
+
+                # Placing a flag- if flag already there, change flag to question mark.
+                # If question mark already there, turn to nothing. If nothing there, turn on flag
                 if not self.revealed_cells[cell_x][cell_y] and right_click and not self.game_over:
-                    self.flags[cell_x][cell_y] = not self.flags[cell_x][cell_y]
-                    self.draw_board(self.board, self.revealed_cells, self.flags)    # Flag is drawn in this method call
+                    if self.flags[cell_x][cell_y]:
+                        self.flags[cell_x][cell_y] = False
+                        self.questionmarks[cell_x][cell_y] = True
+                    elif self.questionmarks[cell_x][cell_y]:
+                        self.questionmarks[cell_x][cell_y] = False
+                        self.flags[cell_x][cell_y] = False
+                    else:
+                        self.flags[cell_x][cell_y] = True
+                        self.questionmarks[cell_x][cell_y] = False
+
+                    self.draw_board(self.board, self.revealed_cells, self.flags, self.questionmarks)    # Flag is drawn in this method call
 
                 # This block decides whether or not the player has won yet after a mouse event
                 win = True
@@ -176,10 +192,10 @@ class Game:
         for x in range(GRID_WIDTH):
             for y in range(GRID_HEIGHT):
                 if mines < NUM_MINES:
-                    icons.append((MINE, RED))
+                    icons.append((MINE, RED, UNFLAGGED))
                     mines += 1
                 else:
-                    icons.append((CLEAR, WHITE))
+                    icons.append((CLEAR, WHITE, UNFLAGGED))
         random.shuffle(icons)
 
         # Create static under-board
@@ -231,7 +247,7 @@ class Game:
 
         return board
 
-    # Returns a list of lists showing which cells are clear
+    # Used to show full board on game over & reset board on game start
     @staticmethod
     def generate_data(val):
         clear = []
@@ -257,7 +273,7 @@ class Game:
         return None, None  # If not currently hovering over a cell
 
     # Redraws board after mouse event
-    def draw_board(self, board, revealed, flags):
+    def draw_board(self, board, revealed, flags, questionmarks):
         for cell_x in range(GRID_WIDTH):
             for cell_y in range(GRID_HEIGHT):
                 left, top = self.get_top_left_coordinates(cell_x, cell_y)
@@ -273,6 +289,13 @@ class Game:
                                                                   (left, top + CELL_SIDE_LENGTH - CELL_MARGIN/2),
                                                                   (left + CELL_SIDE_LENGTH - CELL_MARGIN/2, top +
                                                                    CELL_SIDE_LENGTH - CELL_MARGIN/2)])
+                    elif questionmarks[cell_x][cell_y]:
+                        quarter = int(CELL_SIDE_LENGTH * 0.25)
+                        pygame.draw.rect(SURFACE, GRAY, (left, top, CELL_SIDE_LENGTH, CELL_SIDE_LENGTH))
+                        fontsize = int(CELL_SIDE_LENGTH)
+                        font = pygame.font.SysFont("times new roman", fontsize)
+                        label = font.render("?", 1, BLACK)
+                        SURFACE.blit(label, (left + quarter, top))
 
                 else:   # Draw revealed cells
                     shape, color = self.get_shape_and_color(board, cell_x, cell_y)
@@ -293,7 +316,7 @@ class Game:
         elif shape == MINE:
             pygame.draw.ellipse(SURFACE, color, (left, top, CELL_SIDE_LENGTH, CELL_SIDE_LENGTH))
 
-        # Flag shape in draw_board because it is activated via mouse event
+        # Flag shape & question mark in draw_board because they are activated via mouse event
 
         else:   # Clear with num
             pygame.draw.rect(SURFACE, color, (left, top, CELL_SIDE_LENGTH, CELL_SIDE_LENGTH))
@@ -308,6 +331,12 @@ class Game:
         # shape value for cell x, y is stored in board[x][y][0], color value in board[x][y][1]
         return board[cell_x][cell_y][0], board[cell_x][cell_y][1]
 
+    # Returns the state of a cell in regards to flagging: unflagged, flagged, or question mark
+    @staticmethod
+    def get_flagged_state(board, cell_x, cell_y):
+        # Value is held in board[x][y][2]
+        return board[cell_x][cell_y][2]
+
     # Draws a box around the cell the mouse is hovering over, 'highlighting' it
     def highlight_cell(self, cell_x, cell_y):
         left, top = self.get_top_left_coordinates(cell_x, cell_y)
@@ -316,7 +345,7 @@ class Game:
                                                     CELL_SIDE_LENGTH + CELL_MARGIN, CELL_SIDE_LENGTH + CELL_MARGIN), 2)
 
     # Reveals clear cells next to clear cell the user clicked (and clear cells next to those cells, etc.)
-    def reveal_cells(self, x, y, board, revealed, flags):
+    def reveal_cells(self, x, y, board, revealed, flags, questionmarks):
         if revealed[x][y]:  # If the cell is already revealed, do nothing
             return
         if flags[x][y]:     # If the cell already has a flag on it, do nothing
@@ -326,23 +355,23 @@ class Game:
             return
         if x > 0:
             if y > 0:
-                self.reveal_cells(x - 1, y - 1, board, revealed, flags)
-            self.reveal_cells(x - 1, y, board, revealed, flags)
+                self.reveal_cells(x - 1, y - 1, board, revealed, flags, questionmarks)
+            self.reveal_cells(x - 1, y, board, revealed, flags, questionmarks)
             if y < GRID_HEIGHT - 1:
-                self.reveal_cells(x - 1, y + 1, board, revealed, flags)
+                self.reveal_cells(x - 1, y + 1, board, revealed, flags, questionmarks)
 
         if x < GRID_WIDTH - 1:
             if y > 0:
-                self.reveal_cells(x + 1, y - 1, board, revealed, flags)
-            self.reveal_cells(x + 1, y, board, revealed, flags)
+                self.reveal_cells(x + 1, y - 1, board, revealed, flags, questionmarks)
+            self.reveal_cells(x + 1, y, board, revealed, flags, questionmarks)
             if y < GRID_HEIGHT - 1:
-                self.reveal_cells(x + 1, y + 1, board, revealed, flags)
+                self.reveal_cells(x + 1, y + 1, board, revealed, flags, questionmarks)
 
         if y > 0:
-            self.reveal_cells(x, y - 1, board, revealed, flags)
+            self.reveal_cells(x, y - 1, board, revealed, flags, questionmarks)
 
         if y < GRID_HEIGHT - 1:
-            self.reveal_cells(x, y + 1, board, revealed, flags)
+            self.reveal_cells(x, y + 1, board, revealed, flags, questionmarks)
 
 
 class Stopwatch:
