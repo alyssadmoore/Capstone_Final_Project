@@ -2,6 +2,7 @@ import sys
 import random
 import pygame
 import pygame.locals
+import time
 
 # TODO timer, high scores, difficulties
 # TODO question mark after flag?
@@ -60,6 +61,7 @@ class Game:
         self.revealed_cells = self.generate_data(False)
         self.flags = self.generate_data(False)
         self.game_over = False
+        self.timer = Stopwatch()
 
         SURFACE.fill(BG_COLOR)
 
@@ -75,8 +77,9 @@ class Game:
             font = pygame.font.SysFont("times new roman", 25)
 
             # Timer (will be used to implement high scores)
-            time = pygame.time.get_ticks() / 1000
-            label = font.render(str(int(time)), 1, MAGENTA)
+            self.timer.start()
+            t1 = self.timer.get_seconds()
+            label = font.render(str(t1), 1, MAGENTA)
             SURFACE.blit(label, (50, 50))
 
             # Mouse event handling
@@ -93,16 +96,18 @@ class Game:
                     self.mouse_x, self.mouse_y = event.pos
                     right_click = True
 
-            # If user decided to start over, reinitialize board
+            # If user decided to start over, reinitialize game
             if self.game_over and right_click:
                 self.board = self.get_board()
                 self.revealed_cells = self.generate_data(False)
                 self.flags = self.generate_data(False)
                 self.game_over = False
+                self.timer = Stopwatch()
                 right_click = False
 
             # TODO tweak spacing on text
             if self.game_over:
+                self.timer.pause()
                 a_x = X_BOARD_MARGIN + ((GRID_WIDTH / 4) * CELL_SIDE_LENGTH)
                 b_y = Y_BOARD_MARGIN + (Y_BOARD_MARGIN / 4) + (GRID_HEIGHT * CELL_SIDE_LENGTH) + (GRID_HEIGHT * CELL_MARGIN)
                 font = pygame.font.SysFont("times new roman", 25)
@@ -338,6 +343,29 @@ class Game:
 
         if y < GRID_HEIGHT - 1:
             self.reveal_cells(x, y + 1, board, revealed, flags)
+
+
+class Stopwatch:
+    def __init__(self):
+        self.seconds = 0
+        self.running = False
+        self.latest_time = None
+
+    def start(self):
+        if not self.running:
+            self.running = True
+            self.latest_time = time.time()
+
+    def get_seconds(self):
+        t1 = self.seconds
+        if self.running:
+            t1 += time.time() - self.latest_time
+        return int(t1)
+
+    def pause(self):
+        if self.running:
+            self.running = False
+            self.seconds += time.time() - self.latest_time
 
 
 g = Game()
