@@ -42,8 +42,6 @@ FLAG_COLOR = MIDGREEN
 
 # Symbols
 FLAG = 'flag'
-UNFLAGGED = 'unflagged'
-QUESTIONMARK = 'questionmark'
 MINE = 'mine'
 CLEAR = 'clear'
 
@@ -192,10 +190,10 @@ class Game:
         for x in range(GRID_WIDTH):
             for y in range(GRID_HEIGHT):
                 if mines < NUM_MINES:
-                    icons.append((MINE, RED, UNFLAGGED))
+                    icons.append((MINE, RED))
                     mines += 1
                 else:
-                    icons.append((CLEAR, WHITE, UNFLAGGED))
+                    icons.append((CLEAR, WHITE))
         random.shuffle(icons)
 
         # Create static under-board
