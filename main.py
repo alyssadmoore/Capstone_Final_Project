@@ -4,23 +4,23 @@ import pygame
 import pygame.locals
 import time
 
-# TODO timer, high scores, difficulties
-# TODO question mark after flag?
+# TODO high scores, difficulties
 
 # Absolutes (in pixels where not otherwise stated)
-CELL_SIDE_LENGTH = 30      # Side length of each cell- ADJUST THIS TO MAKE ENTIRE SCREEN LARGER OR SMALLER
+CELL_SIDE_LENGTH = 40   # Side length of each cell
 CELL_MARGIN = 2     # Gap between cells
 GRID_HEIGHT = 10    # How many cells are in the grid
 GRID_WIDTH = 10
-X_BOARD_MARGIN = 50   # Gap between grid and sides of board
+X_BOARD_MARGIN = 50     # Gap between grid and sides of board
 Y_BOARD_MARGIN = 75
-DIFFICULTY = 0.1    # TODO later features, will affect board size and mine ratio
+MENU_MARGIN = 100   # Amount of space on the right dedicated to the menu
+DIFFICULTY = 0.1    # Ratio of bombs (10% by default)
 FPS = 30    # frames per second (window refresh speed)
 
 # Relatives (so board size can easily be changed)
 NUM_MINES = 1 + int(GRID_WIDTH * GRID_HEIGHT * DIFFICULTY)  # Default about 10% of the board is mines
 WINDOW_HEIGHT = (CELL_SIDE_LENGTH * GRID_HEIGHT) + (CELL_MARGIN * GRID_HEIGHT) + (Y_BOARD_MARGIN * 2)
-WINDOW_WIDTH = (CELL_SIDE_LENGTH * GRID_WIDTH) + (CELL_MARGIN * GRID_WIDTH) + (X_BOARD_MARGIN * 2)
+WINDOW_WIDTH = (CELL_SIDE_LENGTH * GRID_WIDTH) + (CELL_MARGIN * GRID_WIDTH) + (X_BOARD_MARGIN * 2) + MENU_MARGIN
 
 # R G B (not all used, but kept so theme can easily be changed)
 RED = (255, 0, 0)
@@ -74,6 +74,7 @@ class Game:
 
             SURFACE.fill(BG_COLOR)
             self.draw_board(self.board, self.revealed_cells, self.flags, self.questionmarks)
+            self.create_menu()
 
             font = pygame.font.SysFont("times new roman", 25)
 
@@ -92,6 +93,7 @@ class Game:
                     self.mouse_x, self.mouse_y = event.pos  # For hovering info
                 elif event.type == pygame.locals.MOUSEBUTTONDOWN and event.button == 1:  # Left click
                     self.mouse_x, self.mouse_y = event.pos
+                    print(self.mouse_x, self.mouse_y)
                     left_click = True
                 elif event.type == pygame.locals.MOUSEBUTTONDOWN and event.button == 3:  # Right click
                     self.mouse_x, self.mouse_y = event.pos
@@ -110,17 +112,19 @@ class Game:
             # TODO tweak spacing on text
             if self.game_over:
                 self.timer.pause()
+                score = self.timer.get_seconds()
+
                 a_x = X_BOARD_MARGIN + ((GRID_WIDTH / 4) * CELL_SIDE_LENGTH)
                 b_y = Y_BOARD_MARGIN + (Y_BOARD_MARGIN / 4) + (GRID_HEIGHT * CELL_SIDE_LENGTH) + (GRID_HEIGHT * CELL_MARGIN)
                 font = pygame.font.SysFont("times new roman", 25)
                 if win:
                     label = font.render('Congratulations, you won!', 1, GREEN)
-                    SURFACE.blit(label, (a_x, b_y))
-                    label = font.render('Score: ' + str(time), 1, YELLOW)
-                    SURFACE.blit(label, a_x, b_y)
+                    SURFACE.blit(label, (a_x - 75, b_y))
+                    label = font.render('Score: ' + str(score), 1, GREEN)
+                    SURFACE.blit(label, (a_x + 200, b_y))
                 else:
                     label = font.render('GAME OVER', 1, RED)
-                    SURFACE.blit(label, (a_x, b_y))
+                    SURFACE.blit(label, (a_x + 10, b_y))
                 label = font.render('Press RIGHT mouse button', 1, YELLOW)
                 SURFACE.blit(label, (a_x - 50, b_y + 25))
 
@@ -149,7 +153,8 @@ class Game:
                         else:
                             self.revealed_cells[cell_x][cell_y] = True  # Set the cell as revealed
 
-                        self.draw_board(self.board, self.revealed_cells, self.flags, self.questionmarks)    # Redraw board after mouse event
+                        # Redraw board after mouse event
+                        self.draw_board(self.board, self.revealed_cells, self.flags, self.questionmarks)
 
                 # Placing a flag- if flag already there, change flag to question mark.
                 # If question mark already there, turn to nothing. If nothing there, turn on flag
@@ -164,7 +169,8 @@ class Game:
                         self.flags[cell_x][cell_y] = True
                         self.questionmarks[cell_x][cell_y] = False
 
-                    self.draw_board(self.board, self.revealed_cells, self.flags, self.questionmarks)    # Flag is drawn in this method call
+                    # Flag is drawn in this method call
+                    self.draw_board(self.board, self.revealed_cells, self.flags, self.questionmarks)
 
                 # This block decides whether or not the player has won yet after a mouse event
                 win = True
@@ -277,11 +283,12 @@ class Game:
             for cell_y in range(GRID_HEIGHT):
                 left, top = self.get_top_left_coordinates(cell_x, cell_y)
 
+                # Symbols not added on board creation must be drawn here: "unrevealed" boxes, flags, and question marks
                 if not revealed[cell_x][cell_y]:
                     # Draw a gray box over unrevealed cell, so value isn't affected but user can't see the value
                     pygame.draw.rect(SURFACE, CELL_COLOR, (left, top, CELL_SIDE_LENGTH, CELL_SIDE_LENGTH))
 
-                    if flags[cell_x][cell_y]:   # Flag must be drawn here, activated after mouse event
+                    if flags[cell_x][cell_y]:
                         half = int(CELL_SIDE_LENGTH * 0.5)   # Relative point halfway through cell
                         # top point, bottom left point, bottom right point
                         pygame.draw.polygon(SURFACE, FLAG_COLOR, [(half + left, top),
@@ -330,12 +337,6 @@ class Game:
         # shape value for cell x, y is stored in board[x][y][0], color value in board[x][y][1]
         return board[cell_x][cell_y][0], board[cell_x][cell_y][1]
 
-    # Returns the state of a cell in regards to flagging: unflagged, flagged, or question mark
-    @staticmethod
-    def get_flagged_state(board, cell_x, cell_y):
-        # Value is held in board[x][y][2]
-        return board[cell_x][cell_y][2]
-
     # Draws a box around the cell the mouse is hovering over, 'highlighting' it
     def highlight_cell(self, cell_x, cell_y):
         left, top = self.get_top_left_coordinates(cell_x, cell_y)
@@ -371,6 +372,13 @@ class Game:
 
         if y < GRID_HEIGHT - 1:
             self.reveal_cells(x, y + 1, board, revealed, flags, questionmarks)
+
+    @staticmethod
+    def create_menu():
+        font = pygame.font.SysFont("times new roman", 20)
+        label = font.render(" High scores", 1, BLACK)
+        pygame.draw.rect(SURFACE, GRAY, (500, 125, 105, 50))   # view high scores
+        SURFACE.blit(label, (500, 135))
 
 
 class Stopwatch:
